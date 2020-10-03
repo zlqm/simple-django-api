@@ -10,6 +10,7 @@ setuptools.setup(
     author_email='abraham.liu@hotmail.com',
     description='add some feature for django view and request',
     install_requires=['django'],
+    url='https://github.com/zlqm/django_improved_view',
     long_description=long_description,
     packages=setuptools.find_packages(),
     classifiers=[
