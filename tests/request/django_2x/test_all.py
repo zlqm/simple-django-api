@@ -22,8 +22,8 @@ from django.utils.six.moves import http_cookies
 from django.utils.six.moves.urllib.parse import urlencode as original_urlencode
 from django.utils.timezone import utc
 
-from django_improved_view.request import Request as HttpRequest
-from django_improved_view.request import WSGIRequest
+from simple_django_api.request import Request as HttpRequest
+from simple_django_api.request import WSGIRequest
 
 
 class RequestsTests(SimpleTestCase):

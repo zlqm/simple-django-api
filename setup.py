@@ -4,13 +4,17 @@ with open('README.rst') as f:
     long_description = f.read()
 
 setuptools.setup(
-    name='django_improved_view',
-    version='1.0',
+    name='simple_django_api',
+    version='1.0.0',
     author='Abraham',
     author_email='abraham.liu@hotmail.com',
-    description='add some feature for django view and request',
-    install_requires=['django'],
-    url='https://github.com/zlqm/django_improved_view',
+    description='django simple api',
+    install_requires=[
+        'django',
+    ],
+    extras_require={
+        'jwt': ['PyJWT'],
+    },
     long_description=long_description,
     packages=setuptools.find_packages(),
     classifiers=[

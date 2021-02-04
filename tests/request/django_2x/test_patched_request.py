@@ -8,7 +8,7 @@ from django.test.client import FakePayload
 from django.utils.http import urlencode
 from django.utils.six.moves.urllib.parse import urlencode as original_urlencode
 
-from django_improved_view.request import WSGIRequest
+from simple_django_api.request import WSGIRequest
 
 HTTP_METHODS_WITH_BODY = ('POST', 'PUT', 'PATCH')
 

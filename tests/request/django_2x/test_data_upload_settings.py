@@ -4,7 +4,7 @@ from django.core.exceptions import RequestDataTooBig, TooManyFieldsSent
 from django.test import SimpleTestCase
 from django.test.client import FakePayload
 
-from django_improved_view.request import WSGIRequest
+from simple_django_api.request import WSGIRequest
 
 TOO_MANY_FIELDS_MSG = 'The number of GET/POST parameters exceeded settings.DATA_UPLOAD_MAX_NUMBER_FIELDS.'
 TOO_MUCH_DATA_MSG = 'Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE.'

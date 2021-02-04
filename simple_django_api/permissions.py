@@ -1,24 +1,24 @@
-from abc import abstractmethod, ABC
+import abc
 from . import exceptions
 
 
-class BasePermission(ABC):
+class BasePermission(abc.ABC):
     def __init__(self, request, view):
         self.request = request
         self.view = view
 
-    @abstractmethod
+    @abc.abstractmethod
     def __call__(self):
-        pass
+        return True
 
 
 class LoginRequired(BasePermission):
     def __call__(self):
         if not self.request.user.is_authenticated:
-            raise exceptions.Unauthorized()
+            raise exceptions.Unauthorized
 
 
 class SuperUserRequired(BasePermission):
     def __call__(self):
         if not self.request.user.is_superuser:
-            raise exceptions.Forbidden()
+            raise exceptions.Forbidden

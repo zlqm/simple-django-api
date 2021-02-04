@@ -1,13 +1,12 @@
 from io import BytesIO
 from types import MethodType
-from .compat import complex_json
 
 from django.core.handlers.wsgi import WSGIRequest as OriginWSGIRequest
 from django.http.request import HttpRequest, QueryDict
 from django.http.multipartparser import MultiPartParserError
 from django.utils.datastructures import MultiValueDict
 
-from . import exceptions
+from . import compat, exceptions
 
 
 def parse_json_body(input_data, *, encoding=None):
@@ -15,18 +14,17 @@ def parse_json_body(input_data, *, encoding=None):
     try:
         if hasattr(input_data, 'decode'):
             input_data = input_data.decode(encoding)
-        return complex_json.loads(input_data)
-    except (complex_json.JSONDecodeError, ValueError):
-        raise exceptions.InvalidRequestBody(
-            'failed to load application/json: %s' % input_data)
+        return compat.json.loads(input_data)
+    except (compat.json.JSONDecodeError, ValueError):
+        raise exceptions.InvalidRequestBody()
 
 
+# this code is part of django.http.request.HttpRequest
 def _load_post_and_files(self):
-    # 这里的代码直接拷贝的Django代码，
-    # 如果未来Django调整内部实现，本方法就不能用了
-    if self.method.upper() not in ('POST', 'PUT', 'PATCH'):
-        self._post = QueryDict(encoding=self._encoding)
-        self._files = MultiValueDict()
+    """Populate self._post and self._files if the content-type is a form type"""
+    if self.method not in ['POST', 'PUT', 'PATCH']:
+        self._post, self._files = QueryDict(
+            encoding=self._encoding), MultiValueDict()
         return
     if self._read_started and not hasattr(self, '_body'):
         self._mark_post_parse_error()
@@ -45,29 +43,22 @@ def _load_post_and_files(self):
             # formatting the error the request handler might access
             # self.POST, set self._post and self._file to prevent
             # attempts to parse POST data again.
-            # Mark that an error occurred. This allows self.__repr__ to
-            # be explicit about it instead of simply representing an
-            # empty POST
             self._mark_post_parse_error()
             raise
     elif self.content_type == 'application/x-www-form-urlencoded':
-        self._post = QueryDict(self.body, encoding=self._encoding)
-        self._files = MultiValueDict()
+        self._post, self._files = QueryDict(
+            self.body, encoding=self._encoding), MultiValueDict()
     elif self.content_type == 'application/json':
         self._post = parse_json_body(self.body, encoding=self._encoding)
         self._files = MultiValueDict()
     else:
-        self._post = QueryDict(encoding=self._encoding)
-        self._files = MultiValueDict()
+        self._post, self._files = QueryDict(
+            encoding=self._encoding), MultiValueDict()
 
 
 class Request:
-    """对Django原有Request进行封装，主要添加json body的解析功能
-    """
-    METHODS_WITH_PAYLOAD = ['POST', 'PATCH', 'PUT']
-
     def __init__(self, raw_request=None):
-        if not raw_request:
+        if raw_request is None:
             raw_request = HttpRequest()
         raw_request._load_post_and_files = MethodType(_load_post_and_files,
                                                       raw_request)
@@ -81,18 +72,24 @@ class Request:
     def query_params(self):
         return self._raw_request.GET
 
-    def __repr__(self):
-        return repr(self._raw_request)
+    @property
+    def files(self):
+        return self._raw_request.files
 
     def __getattr__(self, name):
         return getattr(self._raw_request, name)
 
     def __setattr__(self, name, value):
-        name_list = ['_raw_request', '_data']
-        if name in name_list:
+        key_lst = {
+            '_raw_request',
+        }
+        if name in key_lst:
             super().__setattr__(name, value)
         else:
-            return setattr(self._raw_request, name, value)
+            setattr(self._raw_request, name, value)
+
+    def __repr__(self):
+        return repr(self._raw_request)
 
     def __iter__(self):
         return iter(self._raw_request)
