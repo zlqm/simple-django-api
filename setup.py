@@ -5,7 +5,7 @@ with open('README.rst') as f:
 
 setuptools.setup(
     name='simple_django_api',
-    version='1.0.2',
+    version='1.0.3',
     author='Abraham',
     author_email='abraham.liu@hotmail.com',
     description='django simple api',
