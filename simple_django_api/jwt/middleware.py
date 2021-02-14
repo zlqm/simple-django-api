@@ -13,6 +13,7 @@ class AuthenticationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        request.user = SimpleLazyObject(lambda: get_user(request))
+        if not getattr(request, 'user'):
+            request.user = SimpleLazyObject(lambda: get_user(request))
         response = self.get_response(request)
         return response
