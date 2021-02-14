@@ -72,7 +72,7 @@ class APIView(View):
             'data': request.data,
         }
         try:
-            context['user'] = request.user
+            context['user'] = str(request.user)
             request.user.is_authenticated  # user is lazy object
         except Exception:
             # must import after django setup
