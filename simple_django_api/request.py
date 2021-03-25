@@ -15,13 +15,14 @@ def parse_json_body(input_data, *, encoding=None):
         if hasattr(input_data, 'decode'):
             input_data = input_data.decode(encoding)
         return compat.json.loads(input_data)
-    except (compat.json.JSONDecodeError, ValueError):
-        raise exceptions.InvalidRequestBody()
+    except (compat.json.JSONDecodeError, ValueError) as exc:
+        raise exceptions.InvalidRequestBody() from exc
 
 
 # this code is part of django.http.request.HttpRequest
 def _load_post_and_files(self):
-    """Populate self._post and self._files if the content-type is a form type"""
+    """Populate self._post and self._files
+    if the content-type is a form type"""
     if self.method not in ['POST', 'PUT', 'PATCH']:
         self._post, self._files = QueryDict(
             encoding=self._encoding), MultiValueDict()

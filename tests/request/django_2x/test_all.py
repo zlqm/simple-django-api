@@ -1,15 +1,16 @@
 # -*- encoding: utf-8 -*-
 from __future__ import unicode_literals
-
-import time
 from datetime import datetime, timedelta
 from io import BytesIO
 from itertools import chain
+import time
 
 from django.core.exceptions import SuspiciousOperation
 from django.core.handlers.wsgi import LimitedStream
 from django.http import (
-    HttpResponse, RawPostDataException, UnreadablePostError,
+    HttpResponse,
+    RawPostDataException,
+    UnreadablePostError,
 )
 from django.http.request import split_domain_port
 from django.test import RequestFactory, SimpleTestCase, override_settings
@@ -65,7 +66,8 @@ class RequestsTests(SimpleTestCase):
         request.POST = {'post-key': 'post-value'}
         request.COOKIES = {'post-key': 'post-value'}
         request.META = {'post-key': 'post-value'}
-        self.assertEqual(repr(request), str_prefix("<HttpRequest: GET '/somepath/'>"))
+        self.assertEqual(repr(request),
+                         str_prefix("<HttpRequest: GET '/somepath/'>"))
 
     def test_httprequest_repr_invalid_method_and_path(self):
         request = HttpRequest()
@@ -88,9 +90,10 @@ class RequestsTests(SimpleTestCase):
         self.assertEqual(list(request.POST.keys()), [])
         self.assertEqual(list(request.COOKIES.keys()), [])
         self.assertEqual(
-            set(request.META.keys()),
-            {'PATH_INFO', 'REQUEST_METHOD', 'SCRIPT_NAME', 'CONTENT_TYPE', 'wsgi.input'}
-        )
+            set(request.META.keys()), {
+                'PATH_INFO', 'REQUEST_METHOD', 'SCRIPT_NAME', 'CONTENT_TYPE',
+                'wsgi.input'
+            })
         self.assertEqual(request.META['PATH_INFO'], 'bogus')
         self.assertEqual(request.META['REQUEST_METHOD'], 'bogus')
         self.assertEqual(request.META['SCRIPT_NAME'], '')
@@ -155,38 +158,65 @@ class RequestsTests(SimpleTestCase):
         """
         # With trailing slash
         with override_settings(FORCE_SCRIPT_NAME='/FORCED_PREFIX/'):
-            request = WSGIRequest({'PATH_INFO': '/somepath/', 'REQUEST_METHOD': 'get', 'wsgi.input': BytesIO(b'')})
+            request = WSGIRequest({
+                'PATH_INFO': '/somepath/',
+                'REQUEST_METHOD': 'get',
+                'wsgi.input': BytesIO(b'')
+            })
             self.assertEqual(request.path, '/FORCED_PREFIX/somepath/')
         # Without trailing slash
         with override_settings(FORCE_SCRIPT_NAME='/FORCED_PREFIX'):
-            request = WSGIRequest({'PATH_INFO': '/somepath/', 'REQUEST_METHOD': 'get', 'wsgi.input': BytesIO(b'')})
+            request = WSGIRequest({
+                'PATH_INFO': '/somepath/',
+                'REQUEST_METHOD': 'get',
+                'wsgi.input': BytesIO(b'')
+            })
             self.assertEqual(request.path, '/FORCED_PREFIX/somepath/')
 
     def test_WSGIRequest_repr(self):
-        request = WSGIRequest({'REQUEST_METHOD': 'get', 'wsgi.input': BytesIO(b'')})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'get',
+            'wsgi.input': BytesIO(b'')
+        })
         self.assertEqual(repr(request), str_prefix("<WSGIRequest: GET '/'>"))
-        request = WSGIRequest({'PATH_INFO': '/somepath/', 'REQUEST_METHOD': 'get', 'wsgi.input': BytesIO(b'')})
+        request = WSGIRequest({
+            'PATH_INFO': '/somepath/',
+            'REQUEST_METHOD': 'get',
+            'wsgi.input': BytesIO(b'')
+        })
         request.GET = {'get-key': 'get-value'}
         request.POST = {'post-key': 'post-value'}
         request.COOKIES = {'post-key': 'post-value'}
         request.META = {'post-key': 'post-value'}
-        self.assertEqual(repr(request), str_prefix("<WSGIRequest: GET '/somepath/'>"))
+        self.assertEqual(repr(request),
+                         str_prefix("<WSGIRequest: GET '/somepath/'>"))
 
     def test_WSGIRequest_path_info(self):
         def wsgi_str(path_info, encoding='utf-8'):
-            path_info = path_info.encode(encoding)           # Actual URL sent by the browser (bytestring)
+            path_info = path_info.encode(
+                encoding)  # Actual URL sent by the browser (bytestring)
             if six.PY3:
-                path_info = path_info.decode('iso-8859-1')  # Value in the WSGI environ dict (native string)
+                path_info = path_info.decode(
+                    'iso-8859-1'
+                )  # Value in the WSGI environ dict (native string)
             return path_info
+
         # Regression for #19468
-        request = WSGIRequest({'PATH_INFO': wsgi_str("/سلام/"), 'REQUEST_METHOD': 'get', 'wsgi.input': BytesIO(b'')})
+        request = WSGIRequest({
+            'PATH_INFO': wsgi_str("/سلام/"),
+            'REQUEST_METHOD': 'get',
+            'wsgi.input': BytesIO(b'')
+        })
         self.assertEqual(request.path, "/سلام/")
 
         # The URL may be incorrectly encoded in a non-UTF-8 encoding (#26971)
         request = WSGIRequest({
-            'PATH_INFO': wsgi_str("/café/", encoding='iso-8859-1'),
-            'REQUEST_METHOD': 'get',
-            'wsgi.input': BytesIO(b''),
+            'PATH_INFO':
+            wsgi_str("/café/", encoding='iso-8859-1'),
+            'REQUEST_METHOD':
+            'get',
+            'wsgi.input':
+            BytesIO(b''),
         })
         # Since it's impossible to decide the (wrong) encoding of the URL, it's
         # left percent-encoded in the path.
@@ -195,16 +225,15 @@ class RequestsTests(SimpleTestCase):
     def test_httprequest_location(self):
         request = HttpRequest()
         self.assertEqual(
-            request.build_absolute_uri(location="https://www.example.com/asdf"),
-            'https://www.example.com/asdf'
-        )
+            request.build_absolute_uri(
+                location="https://www.example.com/asdf"),
+            'https://www.example.com/asdf')
 
         request.get_host = lambda: 'www.example.com'
         request.path = ''
         self.assertEqual(
             request.build_absolute_uri(location="/path/with:colons"),
-            'http://www.example.com/path/with:colons'
-        )
+            'http://www.example.com/path/with:colons')
 
     def test_near_expiration(self):
         "Cookie will expire when an near expiration time is provided"
@@ -225,7 +254,8 @@ class RequestsTests(SimpleTestCase):
     def test_aware_expiration(self):
         "Cookie accepts an aware datetime as expiration time"
         response = HttpResponse()
-        expires = (datetime.utcnow() + timedelta(seconds=10)).replace(tzinfo=utc)
+        expires = (datetime.utcnow() +
+                   timedelta(seconds=10)).replace(tzinfo=utc)
         time.sleep(0.001)
         response.set_cookie('datetime', expires=expires)
         datetime_cookie = response.cookies['datetime']
@@ -239,9 +269,10 @@ class RequestsTests(SimpleTestCase):
         response.set_cookie('c', 'old-value')
         self.assertEqual(response.cookies['c']['expires'], '')
         response.delete_cookie('c')
-        self.assertIn(response.cookies['c']['expires'],
-                ('Thu, 01-Jan-1970 00:00:00 GMT',
-                'Thu, 01 Jan 1970 00:00:00 GMT',))
+        self.assertIn(response.cookies['c']['expires'], (
+            'Thu, 01-Jan-1970 00:00:00 GMT',
+            'Thu, 01 Jan 1970 00:00:00 GMT',
+        ))
         response.set_cookie('c', 'new-value')
         self.assertEqual(response.cookies['c']['expires'], '')
 
@@ -253,10 +284,12 @@ class RequestsTests(SimpleTestCase):
         self.assertIn(
             datetime_cookie['expires'],
             # assertIn accounts for slight time dependency (#23450)
-            ('Sat, 01-Jan-2028 04:05:06 GMT', 'Sat, 01-Jan-2028 04:05:07 GMT',
-             'Sat, 01 Jan 2028 04:05:06 GMT', 'Sat, 01 Jan 2028 04:05:07 GMT',
-            )
-        )
+            (
+                'Sat, 01-Jan-2028 04:05:06 GMT',
+                'Sat, 01-Jan-2028 04:05:07 GMT',
+                'Sat, 01 Jan 2028 04:05:06 GMT',
+                'Sat, 01 Jan 2028 04:05:07 GMT',
+            ))
 
     def test_max_age_expiration(self):
         "Cookie will expire if max_age is provided"
@@ -267,10 +300,9 @@ class RequestsTests(SimpleTestCase):
         max_age_cookie = response.cookies['max_age']
         self.assertEqual(max_age_cookie['max-age'], 10)
         # Django2.2 use http_date Django1.11 use cookie_date
-        self.assertIn(max_age_cookie['expires'], (
-            http_date(set_cookie_time + 10),
-            cookie_date(set_cookie_time + 10))
-        )
+        self.assertIn(max_age_cookie['expires'],
+                      (http_date(set_cookie_time + 10),
+                       cookie_date(set_cookie_time + 10)))
 
     def test_httponly_cookie(self):
         response = HttpResponse()
@@ -278,7 +310,8 @@ class RequestsTests(SimpleTestCase):
         example_cookie = response.cookies['example']
         # A compat cookie may be in use -- check that it has worked
         # both as an output string, and using the cookie attributes
-        self.assertIn('; %s' % http_cookies.Morsel._reserved['httponly'], str(example_cookie))
+        self.assertIn('; %s' % http_cookies.Morsel._reserved['httponly'],
+                      str(example_cookie))
         self.assertTrue(example_cookie['httponly'])
 
     def test_unicode_cookie(self):
@@ -286,7 +319,8 @@ class RequestsTests(SimpleTestCase):
         response = HttpResponse()
         cookie_value = '清風'
         response.set_cookie('test', cookie_value)
-        self.assertEqual(force_str(cookie_value), response.cookies['test'].value)
+        self.assertEqual(force_str(cookie_value),
+                         response.cookies['test'].value)
 
     def test_limited_stream(self):
         # Read all of a limited stream
@@ -347,10 +381,12 @@ class RequestsTests(SimpleTestCase):
 
     def test_stream(self):
         payload = FakePayload('name=value')
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         self.assertEqual(request.read(), b'name=value')
 
     def test_read_after_value(self):
@@ -359,10 +395,12 @@ class RequestsTests(SimpleTestCase):
         POST or body.
         """
         payload = FakePayload('name=value')
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         self.assertEqual(request.POST, {'name': ['value']})
         self.assertEqual(request.body, b'name=value')
         self.assertEqual(request.read(), b'name=value')
@@ -373,10 +411,12 @@ class RequestsTests(SimpleTestCase):
         from request.
         """
         payload = FakePayload('name=value')
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         self.assertEqual(request.read(2), b'na')
         with self.assertRaises(RawPostDataException):
             request.body
@@ -396,11 +436,13 @@ class RequestsTests(SimpleTestCase):
         """
         Test a POST with non-utf-8 payload encoding.
         """
-        payload = FakePayload(original_urlencode({'key': 'España'.encode('latin-1')}))
+        payload = FakePayload(
+            original_urlencode({'key': 'España'.encode('latin-1')}))
         request = WSGIRequest({
             'REQUEST_METHOD': 'POST',
             'CONTENT_LENGTH': len(payload),
-            'CONTENT_TYPE': 'application/x-www-form-urlencoded; charset=iso-8859-1',
+            'CONTENT_TYPE':
+            'application/x-www-form-urlencoded; charset=iso-8859-1',
             'wsgi.input': payload,
         })
         self.assertEqual(request.POST, {'key': ['España']})
@@ -413,16 +455,16 @@ class RequestsTests(SimpleTestCase):
         # we don't want the data held in memory twice, and we don't want to
         # silence the error by setting body = '' either.
         payload = FakePayload("\r\n".join([
-            '--boundary',
-            'Content-Disposition: form-data; name="name"',
-            '',
-            'value',
-            '--boundary--'
-            '']))
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'multipart/form-data; boundary=boundary',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+            '--boundary', 'Content-Disposition: form-data; name="name"', '',
+            'value', '--boundary--'
+            ''
+        ]))
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary=boundary',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         self.assertEqual(request.POST, {'name': ['value']})
         with self.assertRaises(RawPostDataException):
             request.body
@@ -436,17 +478,17 @@ class RequestsTests(SimpleTestCase):
         # being a binary upload, in which case it should still be accessible
         # via body.
         payload_data = b"\r\n".join([
-            b'--boundary',
-            b'Content-ID: id; name="name"',
-            b'',
-            b'value',
+            b'--boundary', b'Content-ID: id; name="name"', b'', b'value',
             b'--boundary--'
-            b''])
+            b''
+        ])
         payload = FakePayload(payload_data)
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'multipart/related; boundary=boundary',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/related; boundary=boundary',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         self.assertEqual(request.POST, {})
         self.assertEqual(request.body, payload_data)
 
@@ -459,24 +501,26 @@ class RequestsTests(SimpleTestCase):
         # Every request.POST with Content-Length >= 0 is a valid request,
         # this test ensures that we handle Content-Length == 0.
         payload = FakePayload("\r\n".join([
-            '--boundary',
-            'Content-Disposition: form-data; name="name"',
-            '',
-            'value',
-            '--boundary--'
-            '']))
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'multipart/form-data; boundary=boundary',
-                               'CONTENT_LENGTH': 0,
-                               'wsgi.input': payload})
+            '--boundary', 'Content-Disposition: form-data; name="name"', '',
+            'value', '--boundary--'
+            ''
+        ]))
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary=boundary',
+            'CONTENT_LENGTH': 0,
+            'wsgi.input': payload
+        })
         self.assertEqual(request.POST, {})
 
     def test_POST_binary_only(self):
         payload = b'\r\n\x01\x00\x00\x00ab\x00\x00\xcd\xcc,@'
-        environ = {'REQUEST_METHOD': 'POST',
-                   'CONTENT_TYPE': 'application/octet-stream',
-                   'CONTENT_LENGTH': len(payload),
-                   'wsgi.input': BytesIO(payload)}
+        environ = {
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/octet-stream',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': BytesIO(payload)
+        }
         request = WSGIRequest(environ)
         self.assertEqual(request.POST, {})
         self.assertEqual(request.FILES, {})
@@ -491,10 +535,12 @@ class RequestsTests(SimpleTestCase):
 
     def test_read_by_lines(self):
         payload = FakePayload('name=value')
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         self.assertEqual(list(request), [b'name=value'])
 
     def test_POST_after_body_read(self):
@@ -502,10 +548,12 @@ class RequestsTests(SimpleTestCase):
         POST should be populated even if body is read first
         """
         payload = FakePayload('name=value')
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         request.body  # evaluate
         self.assertEqual(request.POST, {'name': ['value']})
 
@@ -515,10 +563,12 @@ class RequestsTests(SimpleTestCase):
         the stream is read second.
         """
         payload = FakePayload('name=value')
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         request.body  # evaluate
         self.assertEqual(request.read(1), b'n')
         self.assertEqual(request.POST, {'name': ['value']})
@@ -529,16 +579,16 @@ class RequestsTests(SimpleTestCase):
         the stream is read second. Using multipart/form-data instead of urlencoded.
         """
         payload = FakePayload("\r\n".join([
-            '--boundary',
-            'Content-Disposition: form-data; name="name"',
-            '',
-            'value',
-            '--boundary--'
-            '']))
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'multipart/form-data; boundary=boundary',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': payload})
+            '--boundary', 'Content-Disposition: form-data; name="name"', '',
+            'value', '--boundary--'
+            ''
+        ]))
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary=boundary',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': payload
+        })
         request.body  # evaluate
         # Consume enough data to mess up the parsing:
         self.assertEqual(request.read(13), b'--boundary\r\nC')
@@ -573,10 +623,12 @@ class RequestsTests(SimpleTestCase):
                 raise IOError("kaboom!")
 
         payload = b'name=value'
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': ExplodingBytesIO(payload)})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': ExplodingBytesIO(payload)
+        })
 
         with self.assertRaises(UnreadablePostError):
             request.body
@@ -595,9 +647,13 @@ class RequestsTests(SimpleTestCase):
 
     def test_set_encoding_clears_GET(self):
         request = WSGIRequest({
-            'REQUEST_METHOD': 'GET',
-            'wsgi.input': '',
-            'QUERY_STRING': b'name=Hello%20G%C3%BCnter' if six.PY2 else 'name=Hello%20G%C3%BCnter'
+            'REQUEST_METHOD':
+            'GET',
+            'wsgi.input':
+            '',
+            'QUERY_STRING':
+            b'name=Hello%20G%C3%BCnter'
+            if six.PY2 else 'name=Hello%20G%C3%BCnter'
         })
         self.assertEqual(request.GET, {'name': ['Hello Günter']})
         request.encoding = 'iso-8859-16'
@@ -613,10 +669,12 @@ class RequestsTests(SimpleTestCase):
                 raise IOError("kaboom!")
 
         payload = b'x'
-        request = WSGIRequest({'REQUEST_METHOD': 'POST',
-                               'CONTENT_TYPE': 'multipart/form-data; boundary=foo_',
-                               'CONTENT_LENGTH': len(payload),
-                               'wsgi.input': ExplodingBytesIO(payload)})
+        request = WSGIRequest({
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary=foo_',
+            'CONTENT_LENGTH': len(payload),
+            'wsgi.input': ExplodingBytesIO(payload)
+        })
 
         with self.assertRaises(UnreadablePostError):
             request.FILES
@@ -625,13 +683,15 @@ class RequestsTests(SimpleTestCase):
     def test_get_raw_uri(self):
         factory = RequestFactory(HTTP_HOST='evil.com')
         request = factory.get('////absolute-uri')
-        self.assertEqual(request.get_raw_uri(), 'http://evil.com//absolute-uri')
+        self.assertEqual(request.get_raw_uri(),
+                         'http://evil.com//absolute-uri')
 
         request = factory.get('/?foo=bar')
         self.assertEqual(request.get_raw_uri(), 'http://evil.com/?foo=bar')
 
         request = factory.get('/path/with:colons')
-        self.assertEqual(request.get_raw_uri(), 'http://evil.com/path/with:colons')
+        self.assertEqual(request.get_raw_uri(),
+                         'http://evil.com/path/with:colons')
 
 
 class HostValidationTests(SimpleTestCase):
@@ -643,13 +703,18 @@ class HostValidationTests(SimpleTestCase):
         'example.com: recovermypassword.com',
     ]
 
-    @override_settings(
-        USE_X_FORWARDED_HOST=False,
-        ALLOWED_HOSTS=[
-            'forward.com', 'example.com', 'internal.com', '12.34.56.78',
-            '[2001:19f0:feee::dead:beef:cafe]', 'xn--4ca9at.com',
-            '.multitenant.com', 'INSENSITIVE.com', '[::ffff:169.254.169.254]',
-        ])
+    @override_settings(USE_X_FORWARDED_HOST=False,
+                       ALLOWED_HOSTS=[
+                           'forward.com',
+                           'example.com',
+                           'internal.com',
+                           '12.34.56.78',
+                           '[2001:19f0:feee::dead:beef:cafe]',
+                           'xn--4ca9at.com',
+                           '.multitenant.com',
+                           'INSENSITIVE.com',
+                           '[::ffff:169.254.169.254]',
+                       ])
     def test_http_get_host(self):
         # Check if X_FORWARDED_HOST is provided.
         request = HttpRequest()
@@ -841,14 +906,15 @@ class HostValidationTests(SimpleTestCase):
         msg_suggestion2 = msg_invalid_host + " The domain name provided is not valid according to RFC 1034/1035"
 
         for host in [  # Valid-looking hosts
-            'example.com',
-            '12.34.56.78',
-            '[2001:19f0:feee::dead:beef:cafe]',
-            'xn--4ca9at.com',  # Punycode for öäü.com
+                'example.com',
+                '12.34.56.78',
+                '[2001:19f0:feee::dead:beef:cafe]',
+                'xn--4ca9at.com',  # Punycode for öäü.com
         ]:
             request = HttpRequest()
             request.META = {'HTTP_HOST': host}
-            with self.assertRaisesMessage(SuspiciousOperation, msg_suggestion % (host, host)):
+            with self.assertRaisesMessage(SuspiciousOperation,
+                                          msg_suggestion % (host, host)):
                 request.get_host()
 
         for domain, port in [  # Valid-looking hosts with a port number
@@ -859,18 +925,21 @@ class HostValidationTests(SimpleTestCase):
             host = '%s:%s' % (domain, port)
             request = HttpRequest()
             request.META = {'HTTP_HOST': host}
-            with self.assertRaisesMessage(SuspiciousOperation, msg_suggestion % (host, domain)):
+            with self.assertRaisesMessage(SuspiciousOperation,
+                                          msg_suggestion % (host, domain)):
                 request.get_host()
 
         for host in self.poisoned_hosts:
             request = HttpRequest()
             request.META = {'HTTP_HOST': host}
-            with self.assertRaisesMessage(SuspiciousOperation, msg_invalid_host % host):
+            with self.assertRaisesMessage(SuspiciousOperation,
+                                          msg_invalid_host % host):
                 request.get_host()
 
         request = HttpRequest()
         request.META = {'HTTP_HOST': "invalid_hostname.com"}
-        with self.assertRaisesMessage(SuspiciousOperation, msg_suggestion2 % "invalid_hostname.com"):
+        with self.assertRaisesMessage(SuspiciousOperation, msg_suggestion2 %
+                                      "invalid_hostname.com"):
             request.get_host()
 
     def test_split_domain_port_removes_trailing_dot(self):
@@ -883,7 +952,6 @@ class BuildAbsoluteURITestCase(SimpleTestCase):
     """
     Regression tests for ticket #18314.
     """
-
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -895,10 +963,8 @@ class BuildAbsoluteURITestCase(SimpleTestCase):
         """
         # //// is needed to create a request with a path beginning with //
         request = self.factory.get('////absolute-uri')
-        self.assertEqual(
-            request.build_absolute_uri(),
-            'http://testserver//absolute-uri'
-        )
+        self.assertEqual(request.build_absolute_uri(),
+                         'http://testserver//absolute-uri')
 
     def test_build_absolute_uri_absolute_location(self):
         """
@@ -910,8 +976,7 @@ class BuildAbsoluteURITestCase(SimpleTestCase):
         request = self.factory.get('////absolute-uri')
         self.assertEqual(
             request.build_absolute_uri(location='http://example.com/?foo=bar'),
-            'http://example.com/?foo=bar'
-        )
+            'http://example.com/?foo=bar')
 
     def test_build_absolute_uri_schema_relative_location(self):
         """
@@ -923,8 +988,7 @@ class BuildAbsoluteURITestCase(SimpleTestCase):
         request = self.factory.get('////absolute-uri')
         self.assertEqual(
             request.build_absolute_uri(location='//example.com/?foo=bar'),
-            'http://example.com/?foo=bar'
-        )
+            'http://example.com/?foo=bar')
 
     def test_build_absolute_uri_relative_location(self):
         """
@@ -934,8 +998,5 @@ class BuildAbsoluteURITestCase(SimpleTestCase):
         """
         # //// is needed to create a request with a path beginning with //
         request = self.factory.get('////absolute-uri')
-        self.assertEqual(
-            request.build_absolute_uri(location='/foo/bar/'),
-            'http://testserver/foo/bar/'
-        )
-
+        self.assertEqual(request.build_absolute_uri(location='/foo/bar/'),
+                         'http://testserver/foo/bar/')

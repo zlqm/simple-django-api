@@ -66,13 +66,12 @@ class OriginRequestTest(SimpleTestCase):
         """
         for method in HTTP_METHODS_WITH_BODY:
             payload = FakePayload(
-                original_urlencode({
-                    'key': 'España'.encode('latin-1')
-                }))
+                original_urlencode({'key': 'España'.encode('latin-1')}))
             request = WSGIRequest({
                 'REQUEST_METHOD': method,
                 'CONTENT_LENGTH': len(payload),
-                'CONTENT_TYPE': 'application/x-www-form-urlencoded; charset=iso-8859-1',
+                'CONTENT_TYPE':
+                'application/x-www-form-urlencoded; charset=iso-8859-1',
                 'wsgi.input': payload,
             })
             self.assertEqual(request.POST, {'key': ['España']})
@@ -193,7 +192,7 @@ class OriginRequestTest(SimpleTestCase):
                 'CONTENT_LENGTH': len(payload),
                 'wsgi.input': payload
             })
-            request.body    # evaluate
+            request.body  # evaluate
             self.assertEqual(request.POST, {'name': ['value']})
 
     def test_POST_after_body_read_and_stream_read(self):
@@ -209,7 +208,7 @@ class OriginRequestTest(SimpleTestCase):
                 'CONTENT_LENGTH': len(payload),
                 'wsgi.input': payload
             })
-            request.body    # evaluate
+            request.body  # evaluate
             self.assertEqual(request.read(1), b'n')
             self.assertEqual(request.POST, {'name': ['value']})
 
@@ -230,7 +229,7 @@ class OriginRequestTest(SimpleTestCase):
                 'CONTENT_LENGTH': len(payload),
                 'wsgi.input': payload
             })
-            request.body    # evaluate
+            request.body  # evaluate
             # Consume enough data to mess up the parsing:
             self.assertEqual(request.read(13), b'--boundary\r\nC')
             self.assertEqual(request.POST, {'name': ['value']})
@@ -260,7 +259,6 @@ class OriginRequestTest(SimpleTestCase):
         If wsgi.input.read() raises an exception while trying to read() the
         POST, the exception should be identifiable (not a generic IOError).
         """
-
         class ExplodingBytesIO(BytesIO):
             def read(self, len=0):
                 raise IOError("kaboom!")
@@ -295,7 +293,6 @@ class OriginRequestTest(SimpleTestCase):
         If wsgi.input.read() raises an exception while trying to read() the
         FILES, the exception should be identifiable (not a generic IOError).
         """
-
         class ExplodingBytesIO(BytesIO):
             def read(self, len=0):
                 raise IOError("kaboom!")
@@ -386,7 +383,7 @@ class PatchedRequestsTests(SimpleTestCase):
                 'CONTENT_LENGTH': len(payload),
                 'wsgi.input': payload
             })
-            request.body    # evaluate
+            request.body  # evaluate
             self.assertEqual(request.data, {'name': '佚名'})
 
     def test_POST_after_body_read_and_stream_read(self):
@@ -402,7 +399,7 @@ class PatchedRequestsTests(SimpleTestCase):
                 'CONTENT_LENGTH': len(payload),
                 'wsgi.input': payload
             })
-            request.body    # evaluate
+            request.body  # evaluate
             self.assertEqual(request.read(1), b'{')
             self.assertEqual(request.POST, {'name': '佚名'})
             self.assertEqual(request.data, {'name': '佚名'})
@@ -412,7 +409,6 @@ class PatchedRequestsTests(SimpleTestCase):
         If wsgi.input.read() raises an exception while trying to read() the
         POST, the exception should be identifiable (not a generic IOError).
         """
-
         class ExplodingBytesIO(BytesIO):
             def read(self, len=0):
                 raise IOError("kaboom!")
@@ -441,4 +437,3 @@ class PatchedRequestsTests(SimpleTestCase):
             self.assertEqual(request.data, {'name': '佚名'})
             request.encoding = 'GBK'
             self.assertEqual(request.POST, {'name': '浣氬悕'})
-

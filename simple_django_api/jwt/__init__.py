@@ -1,1 +1,1 @@
-from .auth import genereate_token
+from .auth import generate_token  # noqa: F401

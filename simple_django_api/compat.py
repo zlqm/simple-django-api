@@ -1,4 +1,4 @@
 try:
-    import ujson as json
+    import ujson as json  # noqa: F401
 except ImportError:
-    import json
+    import json  # noqa: F401
