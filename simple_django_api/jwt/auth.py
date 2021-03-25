@@ -7,6 +7,7 @@ import jwt
 
 from .settings import settings
 from .consts import TokenCase
+from ..utils.string import ensure_str
 
 
 def get_user(user_pk=None):
@@ -48,8 +49,8 @@ JWT_CONFIG = SimpleLazyObject(get_jwt_config)
 def encode(payload: dict) -> str:
     """Accept payload and generate token string
     """
-    return jwt.encode(payload, JWT_CONFIG.key,
-                      JWT_CONFIG.algorithm).decode('utf8')
+    token = jwt.encode(payload, JWT_CONFIG.key, JWT_CONFIG.algorithm)
+    return ensure_str(token)
 
 
 def decode(token: str) -> dict:
@@ -109,7 +110,7 @@ def authenticate(request):
         payload = decode(token)
         user_pk = payload[JWT_CONFIG.user_pk_key]
         return get_user(user_pk=user_pk), jwt_info
-    except jwt.ExpiredSignature:
+    except jwt.ExpiredSignatureError:
         jwt_info['case'] = TokenCase.EXPIRED
     except jwt.DecodeError:
         jwt_info['case'] = TokenCase.DECODE_ERROR
