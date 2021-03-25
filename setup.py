@@ -2,7 +2,4 @@
 """
 import setuptools
 
-setuptools.setup(
-    name='simple_django_api',
-    install_requires=['Django'],
-)
+setuptools.setup()
