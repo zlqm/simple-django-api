@@ -1,0 +1,1 @@
+from simple_django_api.utils.settings import FallbackSettings
